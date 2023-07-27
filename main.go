@@ -39,6 +39,7 @@ func CalculateOutputAmount(poolId string, from string, to string, input *big.Int
 		return nil, err
 	}
 
+	// keep only for checking the solution
 	client, err := ethclient.Dial("https://mainnet.infura.io/v3/045e48c084c44c3cafa56096ce9acd42")
 	if err != nil {
 		log.Printf("Can't connect to Ethereum client: %v", err)
@@ -137,9 +138,9 @@ func getToken(client *ethclient.Client, abi abi.ABI, poolAddress common.Address,
 }
 
 func calculate(amountIn *big.Int, reserveIn *big.Int, reserveOut *big.Int) *big.Int {
-	amountInWithFee := new(big.Int).Mul(amountIn, big.NewInt(997)) // amountInWithFee
-	numerator := new(big.Int).Mul(amountInWithFee, reserveOut)     // numerator
+	amountInWithFee := new(big.Int).Mul(amountIn, big.NewInt(997))
+	numerator := new(big.Int).Mul(amountInWithFee, reserveOut)
 	denominator := new(big.Int).Mul(reserveIn, big.NewInt(1000))
-	denominator.Add(denominator, amountInWithFee) // denominator
+	denominator.Add(denominator, amountInWithFee)
 	return numerator.Div(numerator, denominator)
 }
