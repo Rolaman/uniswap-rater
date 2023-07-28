@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -92,7 +93,9 @@ func parseAbi(path string) (*abi.ABI, error) {
 }
 
 func getReserves(client *ethclient.Client, abi *abi.ABI, poolAddress common.Address) (*big.Int, *big.Int, error) {
-	output, err := client.CallContract(context.Background(), ethereum.CallMsg{
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
+	defer cancel()
+	output, err := client.CallContract(ctx, ethereum.CallMsg{
 		To:   &poolAddress,
 		Data: abi.Methods["getReserves"].ID,
 	}, nil)
@@ -119,7 +122,10 @@ func getToken1(client *ethclient.Client, abi *abi.ABI, poolAddress common.Addres
 }
 
 func getToken(client *ethclient.Client, abi *abi.ABI, poolAddress common.Address, method string) (string, error) {
-	output, err := client.CallContract(context.Background(), ethereum.CallMsg{
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
+	defer cancel()
+
+	output, err := client.CallContract(ctx, ethereum.CallMsg{
 		To:   &poolAddress,
 		Data: abi.Methods[method].ID,
 	}, nil)
