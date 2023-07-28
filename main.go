@@ -35,15 +35,13 @@ func main() {
 func CalculateOutputAmount(poolId string, from string, to string, input *big.Int) (*big.Int, error) {
 	pairAbi, err := parseAbi("PairAbi.json")
 	if err != nil {
-		log.Printf("Can't fetch ABI: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't fetch ABI: %v", err)
 	}
 
 	// keep only for checking the solution
 	client, err := ethclient.Dial("https://mainnet.infura.io/v3/045e48c084c44c3cafa56096ce9acd42")
 	if err != nil {
-		log.Printf("Can't connect to Ethereum client: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't connect to Ethereum client: %v", err)
 	}
 
 	contractAddress := common.HexToAddress(poolId)
@@ -74,26 +72,26 @@ func CalculateOutputAmount(poolId string, from string, to string, input *big.Int
 	return calculate(input, r1, r0), nil
 }
 
-func parseAbi(path string) (abi.ABI, error) {
+func parseAbi(path string) (*abi.ABI, error) {
 	abiFile, err := os.Open(path)
 	if err != nil {
-		return abi.ABI{}, fmt.Errorf("failed to open ABI file: %v", err)
+		return nil, fmt.Errorf("failed to open ABI file: %v", err)
 	}
 	defer abiFile.Close()
 
 	abiBytes, err := io.ReadAll(abiFile)
 	if err != nil {
-		return abi.ABI{}, fmt.Errorf("failed to read ABI file: %v", err)
+		return nil, fmt.Errorf("failed to read ABI file: %v", err)
 	}
 
 	parsedABI, err := abi.JSON(strings.NewReader(string(abiBytes)))
 	if err != nil {
-		return abi.ABI{}, fmt.Errorf("failed to parse ABI file: %v", err)
+		return nil, fmt.Errorf("failed to parse ABI file: %v", err)
 	}
-	return parsedABI, nil
+	return &parsedABI, nil
 }
 
-func getReserves(client *ethclient.Client, abi abi.ABI, poolAddress common.Address) (*big.Int, *big.Int, error) {
+func getReserves(client *ethclient.Client, abi *abi.ABI, poolAddress common.Address) (*big.Int, *big.Int, error) {
 	output, err := client.CallContract(context.Background(), ethereum.CallMsg{
 		To:   &poolAddress,
 		Data: abi.Methods["getReserves"].ID,
@@ -112,15 +110,15 @@ func getReserves(client *ethclient.Client, abi abi.ABI, poolAddress common.Addre
 	return reserve0, reserve1, nil
 }
 
-func getToken0(client *ethclient.Client, abi abi.ABI, poolAddress common.Address) (string, error) {
+func getToken0(client *ethclient.Client, abi *abi.ABI, poolAddress common.Address) (string, error) {
 	return getToken(client, abi, poolAddress, "token0")
 }
 
-func getToken1(client *ethclient.Client, abi abi.ABI, poolAddress common.Address) (string, error) {
+func getToken1(client *ethclient.Client, abi *abi.ABI, poolAddress common.Address) (string, error) {
 	return getToken(client, abi, poolAddress, "token1")
 }
 
-func getToken(client *ethclient.Client, abi abi.ABI, poolAddress common.Address, method string) (string, error) {
+func getToken(client *ethclient.Client, abi *abi.ABI, poolAddress common.Address, method string) (string, error) {
 	output, err := client.CallContract(context.Background(), ethereum.CallMsg{
 		To:   &poolAddress,
 		Data: abi.Methods[method].ID,
